@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iPad Visitor Log</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#34c759" />
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="logo.png" />
+
+  <style>
+    :root{
+      --bg: #ffffff;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --radius: 20px;
+
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+
+      --font-base: 18px;
+      --font-lg: 20px;
+      --font-xl: 30px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #ffffff;
+      margin: 0;
+      padding: calc(16px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    .container {
+      height: calc(100dvh - (16px + var(--sat)) - (16px + var(--sab)));
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: var(--radius);
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    /* ===== Header ===== */
+    .app-header {
+      display: grid;
+      grid-template-columns: 240px 1fr 240px;
+      gap: 10px;
+      align-items: center;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+    }
+
+    .logo-wrap {
+      background: transparent;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .logo-wrap img {
+      max-width: 200px;
+      width: 100%;
+      height: auto;
+    }
+
+    .title-wrap {
+      text-align: center;
+      justify-self: center;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: var(--font-xl);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #111827;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      font-size: var(--font-base);
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    /* ===== Form ===== */
+    .form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    input {
+      width: 100%;
+      font-size: var(--font-lg);
+      padding: 14px 14px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #34c759;
+      box-shadow: 0 0 0 3px rgba(52,199,89,0.20);
+    }
+
+    /* ===== Buttons ===== */
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    button {
+      font-size: var(--font-lg);
+      padding: 16px 18px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .sign-in { background: #34c759; color: #fff; }
+    .sign-out { background: #ff3b30; color: #fff; }
+    .export { background: #6b7280; color: #fff; }
+
+    /* ===== Lists ===== */
+    .panes {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .pane {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .pane h2 {
+      margin: 4px 0 10px;
+      font-size: 20px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .count {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      min-height: 0;
+      border-radius: 12px;
+    }
+
+    li {
+      background: #f9fafb;
+      margin: 8px 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: var(--font-base);
+      cursor: pointer;
+      border: 1px solid #eef0f4;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .li-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .li-name {
+      font-weight: 750;
+      color: #111827;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .li-company {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .delete-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .delete-btn:active {
+      background: #fee2e2;
+      border-color: #fecaca;
+    }
+
+    footer {
+      display: flex;
+      justify-content: center;
+      padding-top: 2px;
+    }
+
+    /* ===== Modals ===== */
+    [hidden] { display: none !important; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+    }
+
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 22px;
+      border-radius: 16px;
+      max-width: 420px;
+      width: min(92vw, 420px);
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    }
+
+    .modal h3 { font-size: 22px; margin: 0 0 10px; }
+    .modal p { margin: 0 0 14px; color: #111827; }
+
+    .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-buttons.one { grid-template-columns: 1fr; }
+
+    .modal-buttons button { font-size: 18px; padding: 12px; border-radius: 12px; }
+    .yes { background: #34c759; color: white; }
+    .no { background: #ff3b30; color: white; }
+
+    @media (max-width: 900px) {
+      .app-header { grid-template-columns: 1fr; text-align: center; gap: 12px; }
+      .logo-wrap { justify-content: center; }
+      .form { grid-template-columns: 1fr; }
+      .buttons { grid-template-columns: 1fr; }
+      .panes { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Modals -->
+  <div id="confirmModal" hidden aria-modal="true" role="dialog" aria-labelledby="confirmTitle">
+    <div class="modal-backdrop" data-close="confirm"></div>
+    <div class="modal">
+      <h3 id="confirmTitle">Induction Confirmation</h3>
+      <p>Have you been inducted?</p>
+      <div class="modal-buttons">
+        <button class="yes" id="confirmYes">Yes</button>
+        <button class="no" id="confirmNo">No</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="passcodeModal" hidden aria-modal="true" role="dialog" aria-labelledby="passcodeTitle">
+    <div class="modal-backdrop" data-close="passcode"></div>
+    <div class="modal">
+      <h3 id="passcodeTitle">Enter Passcode</h3>
+      <input type="password" id="passcodeInput" placeholder="Enter passcode" inputmode="numeric" autocomplete="one-time-code" />
+      <div class="modal-buttons">
+        <button class="yes" id="passcodeSubmit">Submit</button>
+        <button class="no" id="passcodeCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exportConfirmModal" hidden aria-modal="true" role="dialog" aria-labelledby="exportTitle">
+    <div class="modal-backdrop" data-close="export"></div>
+    <div class="modal">
+      <h3 id="exportTitle">CSV Export</h3>
+      <p>Your CSV has been downloaded.</p>
+      <div class="modal-buttons one">
+        <button class="yes" id="exportOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deleteConfirmModal" hidden aria-modal="true" role="dialog" aria-labelledby="deleteTitle">
+    <div class="modal-backdrop" data-close="delete"></div>
+    <div class="modal">
+      <h3 id="deleteTitle">Delete Name</h3>
+      <p id="deleteText">Are you sure?</p>
+      <div class="modal-buttons">
+        <button class="yes" id="deleteYes">Delete</button>
+        <button class="no" id="deleteNo">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <header class="app-header">
+      <div class="logo-wrap">
+        <img src="logo.png" alt="Company Logo" />
+      </div>
+
+      <div class="title-wrap">
+        <h1>Project Argo</h1>
+        <div class="subtitle">CDM Area – Visitor Sign In / Out</div>
+      </div>
+
+      <div class="header-spacer"></div>
+    </header>
+
+    <section class="form" aria-label="Sign in form">
+      <input id="nameInput" placeholder="Enter your name" autocomplete="name" />
+      <input id="companyInput" placeholder="Enter your company" autocomplete="organization" />
+    </section>
+
+    <section class="buttons">
+      <button class="sign-in" id="signInBtn">Sign In</button>
+      <button class="sign-out" id="signOutBtn">Sign Out</button>
+    </section>
+
+    <section class="panes">
+      <div class="pane">
+        <h2>
+          <span>Currently Signed In</span>
+          <span class="count" id="activeCount">0</span>
+        </h2>
+        <ul id="activeList"></ul>
+      </div>
+
+      <div class="pane">
+        <h2>
+          <span>Previously Signed In</span>
+          <span class="count" id="historyCount">0</span>
+        </h2>
+        <ul id="historyList"></ul>
+      </div>
+    </section>
+
+    <footer>
+      <button class="export" id="exportBtn">Generate Report</button>
+    </footer>
+  </main>
+
+  <script>
+    let visits = JSON.parse(localStorage.getItem("visits")) || [];
+    let previousNames = JSON.parse(localStorage.getItem("previousNames")) || {};
+
+    const nameInput = document.getElementById("nameInput");
+    const companyInput = document.getElementById("companyInput");
+    const activeList = document.getElementById("activeList");
+    const historyList = document.getElementById("historyList");
+    const activeCount = document.getElementById("activeCount");
+    const historyCount = document.getElementById("historyCount");
+
+    const confirmModal = document.getElementById("confirmModal");
+    const passcodeModal = document.getElementById("passcodeModal");
+    const exportConfirmModal = document.getElementById("exportConfirmModal");
+    const deleteConfirmModal = document.getElementById("deleteConfirmModal");
+
+    const signInBtn = document.getElementById("signInBtn");
+    const signOutBtn = document.getElementById("signOutBtn");
+    const exportBtn = document.getElementById("exportBtn");
+
+    const confirmYes = document.getElementById("confirmYes");
+    const confirmNo = document.getElementById("confirmNo");
+
+    const passcodeInput = document.getElementById("passcodeInput");
+    const passcodeSubmit = document.getElementById("passcodeSubmit");
+    const passcodeCancel = document.getElementById("passcodeCancel");
+
+    const exportOk = document.getElementById("exportOk");
+
+    const deleteText = document.getElementById("deleteText");
+    const deleteYes = document.getElementById("deleteYes");
+    const deleteNo = document.getElementById("deleteNo");
+
+    let pendingSignIn = null;
+    let pendingAction = null;
+    let pendingDeleteName = null;
+
+    function openModal(el) { el.hidden = false; }
+    function closeModal(el) { el.hidden = true; }
+
+    document.addEventListener("click", (e) => {
+      const target = e.target;
+      if (target && target.matches(".modal-backdrop")) {
+        const which = target.getAttribute("data-close");
+        if (which === "confirm") closeModal(confirmModal);
+        if (which === "passcode") closeModal(passcodeModal);
+        if (which === "export") closeModal(exportConfirmModal);
+        if (which === "delete") closeModal(deleteConfirmModal);
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (!confirmModal.hidden) closeModal(confirmModal);
+      if (!passcodeModal.hidden) closeModal(passcodeModal);
+      if (!exportConfirmModal.hidden) closeModal(exportConfirmModal);
+      if (!deleteConfirmModal.hidden) closeModal(deleteConfirmModal);
+    });
+
+    passcodeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") checkPasscode();
+    });
+
+    signInBtn.addEventListener("click", signIn);
+    signOutBtn.addEventListener("click", signOut);
+    exportBtn.addEventListener("click", requestExport);
+
+    confirmYes.addEventListener("click", () => confirmInduction(true));
+    confirmNo.addEventListener("click", () => confirmInduction(false));
+
+    passcodeSubmit.addEventListener("click", checkPasscode);
+    passcodeCancel.addEventListener("click", closePasscodeModal);
+
+    exportOk.addEventListener("click", closeExportModal);
+
+    deleteNo.addEventListener("click", () => {
+      pendingDeleteName = null;
+      closeModal(deleteConfirmModal);
+    });
+
+    deleteYes.addEventListener("click", () => {
+      if (!pendingDeleteName) return;
+      delete previousNames[pendingDeleteName];
+      localStorage.setItem("previousNames", JSON.stringify(previousNames));
+      pendingDeleteName = null;
+      closeModal(deleteConfirmModal);
+      render();
+    });
+
+    [nameInput, companyInput, passcodeInput].forEach((inp) => {
+      inp.addEventListener("focus", () => {
+        setTimeout(() => inp.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
+      });
+    });
+
+    render();
+
+    function signIn() {
+      const name = nameInput.value.trim();
+      const company = companyInput.value.trim();
+      if (!name || !company) return alert("Please enter your name and company");
+      if (visits.find(v => v.name === name && !v.signOut)) return alert("You are already signed in");
+
+      pendingSignIn = { name, company };
+      openModal(confirmModal);
+    }
+
+    function confirmInduction(confirmed) {
+      closeModal(confirmModal);
+      if (!confirmed) { pendingSignIn = null; return; }
+
+      visits.push({
+        name: pendingSignIn.name,
+        company: pendingSignIn.company,
+        signIn: new Date().toISOString(),
+        signOut: null
+      });
+
+      previousNames[pendingSignIn.name] = pendingSignIn.company;
+      localStorage.setItem("previousNames", JSON.stringify(previousNames));
+
+      pendingSignIn = null;
+      save();
+    }
+
+    function signOut() {
+      const name = nameInput.value.trim();
+      const visit = visits.find(v => v.name === name && !v.signOut);
+      if (!visit) return alert("You are not currently signed in");
+      visit.signOut = new Date().toISOString();
+      save();
+    }
+
+    function save() {
+      localStorage.setItem("visits", JSON.stringify(visits));
+      nameInput.value = "";
+      companyInput.value = "";
+      render();
+      nameInput.focus();
+    }
+
+    function render() {
+      activeList.innerHTML = "";
+      historyList.innerHTML = "";
+
+      const signedInNames = new Set();
+      const active = visits.filter(v => !v.signOut);
+
+      // ✅ CURRENTLY SIGNED IN: SAME FORMAT AS HISTORY
+      active.forEach(v => {
+        const li = document.createElement("li");
+
+        const text = document.createElement("div");
+        text.className = "li-text";
+        text.innerHTML = `
+          <div class="li-name">${escapeHtml(v.name)}</div>
+          <div class="li-company">${escapeHtml(v.company)}</div>
+        `;
+
+        text.addEventListener("click", () => {
+          nameInput.value = v.name;
+          companyInput.value = v.company;
+        });
+
+        li.appendChild(text);
+        activeList.appendChild(li);
+        signedInNames.add(v.name);
+      });
+
+      const historyNames = Object.keys(previousNames)
+        .filter(name => !signedInNames.has(name))
+        .sort((a,b) => a.localeCompare(b));
+
+      historyNames.forEach(name => {
+        const company = previousNames[name] || "";
+
+        const li = document.createElement("li");
+
+        const text = document.createElement("div");
+        text.className = "li-text";
+        text.innerHTML = `
+          <div class="li-name">${escapeHtml(name)}</div>
+          <div class="li-company">${escapeHtml(company)}</div>
+        `;
+
+        text.addEventListener("click", () => {
+          nameInput.value = name;
+          companyInput.value = company;
+        });
+
+        const del = document.createElement("button");
+        del.className = "delete-btn";
+        del.type = "button";
+        del.textContent = "✕";
+        del.setAttribute("aria-label", `Delete ${name}`);
+
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          pendingDeleteName = name;
+          deleteText.textContent = `Delete "${name}" (${company}) from the previous list?`;
+          openModal(deleteConfirmModal);
+        });
+
+        li.appendChild(text);
+        li.appendChild(del);
+
+        historyList.appendChild(li);
+      });
+
+      activeCount.textContent = String(active.length);
+      historyCount.textContent = String(historyNames.length);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function csvEscape(value) {
+      const s = String(value ?? "");
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function exportCSV() {
+      const header = ["Name", "Company", "Sign In", "Sign Out"];
+      const rows = [header];
+
+      visits.forEach(v => rows.push([v.name, v.company, v.signIn, v.signOut || ""]));
+
+      const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n") + "\n";
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+      link.download = `CDM_Visitor_Log_${stamp}.csv`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      visits = [];
+      localStorage.setItem("visits", JSON.stringify(visits));
+
+      openModal(exportConfirmModal);
+      render();
+    }
+
+    function closeExportModal() {
+      closeModal(exportConfirmModal);
+    }
+
+    function requestExport() {
+      pendingAction = "export";
+      passcodeInput.value = "";
+      openModal(passcodeModal);
+      setTimeout(() => passcodeInput.focus(), 50);
+    }
+
+    function closePasscodeModal() {
+      passcodeInput.value = "";
+      closeModal(passcodeModal);
+      pendingAction = null;
+    }
+
+    function checkPasscode() {
+      if (passcodeInput.value !== "8877") return alert("Incorrect passcode");
+      closeModal(passcodeModal);
+      if (pendingAction === "export") exportCSV();
+      pendingAction = null;
+    }
+
+    document.addEventListener("touchmove", (e) => {
+      const path = e.composedPath ? e.composedPath() : [];
+      const inScrollable = path.some(el => el && el.tagName === "UL");
+      if (!inScrollable) e.preventDefault();
+    }, { passive: false });
+  </script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js");
+    });
+  }
+</script>
+
+</body>
+</html>
