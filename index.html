@@ -364,7 +364,7 @@
     <div class="modal-backdrop" data-close="passcode"></div>
     <div class="modal">
       <h3 id="passcodeTitle"></h3>
-      <input type="password" id="passcodeInput" inputmode="numeric" autocomplete="one-time-code" />
+      <input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" />
       <div class="modal-buttons">
         <button class="yes" id="passcodeSubmit"></button>
         <button class="no" id="passcodeCancel"></button>
