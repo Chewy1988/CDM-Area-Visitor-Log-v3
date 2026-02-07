@@ -296,6 +296,28 @@
     .yes { background: #34c759; color: white; }
     .no { background: #ff3b30; color: white; }
 
+    /* ===== BIGGER INDUCTION MODAL ONLY ===== */
+    #confirmModal .modal {
+      max-width: 520px;
+      width: min(95vw, 520px);
+      padding: 34px 28px;
+    }
+
+    #confirmModal .modal h3 {
+      font-size: 28px;
+    }
+
+    #confirmModal .modal p {
+      font-size: 22px;
+      margin-bottom: 22px;
+    }
+
+    #confirmModal .modal-buttons button {
+      font-size: 22px;
+      padding: 18px 16px;
+      border-radius: 14px;
+    }
+
     @media (max-width: 900px) {
       .app-header { grid-template-columns: 1fr; text-align: center; gap: 12px; }
       .logo-wrap { justify-content: center; }
@@ -403,9 +425,18 @@
   </main>
 
   <script>
+    // ---- Service Worker Register ----
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js");
+      });
+    }
+
+    // ---- Data ----
     let visits = JSON.parse(localStorage.getItem("visits")) || [];
     let previousNames = JSON.parse(localStorage.getItem("previousNames")) || {};
 
+    // ---- Elements ----
     const nameInput = document.getElementById("nameInput");
     const companyInput = document.getElementById("companyInput");
     const activeList = document.getElementById("activeList");
@@ -435,13 +466,16 @@
     const deleteYes = document.getElementById("deleteYes");
     const deleteNo = document.getElementById("deleteNo");
 
+    // ---- State ----
     let pendingSignIn = null;
     let pendingAction = null;
     let pendingDeleteName = null;
 
+    // ---- Modal helpers ----
     function openModal(el) { el.hidden = false; }
     function closeModal(el) { el.hidden = true; }
 
+    // Backdrop close
     document.addEventListener("click", (e) => {
       const target = e.target;
       if (target && target.matches(".modal-backdrop")) {
@@ -453,6 +487,7 @@
       }
     });
 
+    // Escape close
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (!confirmModal.hidden) closeModal(confirmModal);
@@ -461,10 +496,12 @@
       if (!deleteConfirmModal.hidden) closeModal(deleteConfirmModal);
     });
 
+    // Enter submits passcode
     passcodeInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") checkPasscode();
     });
 
+    // Buttons
     signInBtn.addEventListener("click", signIn);
     signOutBtn.addEventListener("click", signOut);
     exportBtn.addEventListener("click", requestExport);
@@ -491,6 +528,7 @@
       render();
     });
 
+    // iOS keyboard friendliness
     [nameInput, companyInput, passcodeInput].forEach((inp) => {
       inp.addEventListener("focus", () => {
         setTimeout(() => inp.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
@@ -502,6 +540,7 @@
     function signIn() {
       const name = nameInput.value.trim();
       const company = companyInput.value.trim();
+
       if (!name || !company) return alert("Please enter your name and company");
       if (visits.find(v => v.name === name && !v.signOut)) return alert("You are already signed in");
 
@@ -540,7 +579,7 @@
       nameInput.value = "";
       companyInput.value = "";
       render();
-      
+      // removed auto-focus
     }
 
     function render() {
@@ -550,7 +589,7 @@
       const signedInNames = new Set();
       const active = visits.filter(v => !v.signOut);
 
-      // ✅ CURRENTLY SIGNED IN: SAME FORMAT AS HISTORY
+      // Currently signed in (same format as history)
       active.forEach(v => {
         const li = document.createElement("li");
 
@@ -680,20 +719,12 @@
       pendingAction = null;
     }
 
+    // Prevent pull-to-refresh / page scroll, allow only UL scrolling
     document.addEventListener("touchmove", (e) => {
       const path = e.composedPath ? e.composedPath() : [];
       const inScrollable = path.some(el => el && el.tagName === "UL");
       if (!inScrollable) e.preventDefault();
     }, { passive: false });
   </script>
-
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js");
-    });
-  }
-</script>
-
 </body>
 </html>
