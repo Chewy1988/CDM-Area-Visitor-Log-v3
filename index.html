@@ -141,11 +141,16 @@
     .lang-flag:active{ background: #f3f4f6; }
 
     /* ===== Form ===== */
-    .form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+.form {
+  display: grid;
+  grid-template-columns: 1fr 0.9fr 0.75fr; /* last name slightly smaller */
+
+  gap: 12px;
+}
+
+/* keep the old class harmless if it still exists anywhere */
+.form .fullrow { grid-column: auto; }
+
 
     .form .fullrow { grid-column: 1 / -1; }
 
@@ -338,7 +343,11 @@
       .app-header { grid-template-columns: 1fr; text-align: center; gap: 12px; }
       .logo-wrap { justify-content: center; }
       .lang-wrap { justify-content: center; }
-      .form { grid-template-columns: 1fr; }
+      @media (max-width: 900px) {
+  /* ...your existing rules... */
+  .form { grid-template-columns: 1fr; }
+}
+
       .form .fullrow { grid-column: auto; }
       .buttons { grid-template-columns: 1fr; }
       .panes { grid-template-columns: 1fr; }
@@ -438,7 +447,7 @@
     <section class="form" aria-label="Sign in form">
       <input id="firstNameInput" autocomplete="given-name" />
       <input id="lastNameInput" autocomplete="family-name" />
-      <input id="companyInput" class="fullrow" autocomplete="organization" />
+      <input id="companyInput" autocomplete="organization" />
     </section>
 
     <section class="buttons">
