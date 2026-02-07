@@ -14,8 +14,6 @@
 
   <style>
     :root{
-      --bg: #ffffff;
-      --card: #ffffff;
       --muted: #6b7280;
       --radius: 20px;
 
@@ -107,12 +105,39 @@
       font-weight: 650;
     }
 
+    /* ===== Language flag button (top-right) ===== */
+    .lang-wrap{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .lang-flag{
+      width: 54px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .lang-flag:active{ background: #f3f4f6; }
+
     /* ===== Form ===== */
     .form {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+
+    .form .fullrow { grid-column: 1 / -1; }
 
     input {
       width: 100%;
@@ -296,32 +321,22 @@
     .yes { background: #34c759; color: white; }
     .no { background: #ff3b30; color: white; }
 
-    /* ===== BIGGER INDUCTION MODAL ONLY ===== */
+    /* ===== Bigger Induction Modal Only ===== */
     #confirmModal .modal {
       max-width: 520px;
       width: min(95vw, 520px);
       padding: 34px 28px;
     }
-
-    #confirmModal .modal h3 {
-      font-size: 28px;
-    }
-
-    #confirmModal .modal p {
-      font-size: 22px;
-      margin-bottom: 22px;
-    }
-
-    #confirmModal .modal-buttons button {
-      font-size: 22px;
-      padding: 18px 16px;
-      border-radius: 14px;
-    }
+    #confirmModal .modal h3 { font-size: 28px; }
+    #confirmModal .modal p { font-size: 22px; margin-bottom: 22px; }
+    #confirmModal .modal-buttons button { font-size: 22px; padding: 18px 16px; border-radius: 14px; }
 
     @media (max-width: 900px) {
       .app-header { grid-template-columns: 1fr; text-align: center; gap: 12px; }
       .logo-wrap { justify-content: center; }
+      .lang-wrap { justify-content: center; }
       .form { grid-template-columns: 1fr; }
+      .form .fullrow { grid-column: auto; }
       .buttons { grid-template-columns: 1fr; }
       .panes { grid-template-columns: 1fr; }
     }
@@ -333,11 +348,11 @@
   <div id="confirmModal" hidden aria-modal="true" role="dialog" aria-labelledby="confirmTitle">
     <div class="modal-backdrop" data-close="confirm"></div>
     <div class="modal">
-      <h3 id="confirmTitle">Induction Confirmation</h3>
-      <p>Have you been inducted?</p>
+      <h3 id="confirmTitle"></h3>
+      <p id="confirmQuestion"></p>
       <div class="modal-buttons">
-        <button class="yes" id="confirmYes">Yes</button>
-        <button class="no" id="confirmNo">No</button>
+        <button class="yes" id="confirmYes"></button>
+        <button class="no" id="confirmNo"></button>
       </div>
     </div>
   </div>
@@ -345,11 +360,11 @@
   <div id="passcodeModal" hidden aria-modal="true" role="dialog" aria-labelledby="passcodeTitle">
     <div class="modal-backdrop" data-close="passcode"></div>
     <div class="modal">
-      <h3 id="passcodeTitle">Enter Passcode</h3>
-      <input type="password" id="passcodeInput" placeholder="Enter passcode" inputmode="numeric" autocomplete="one-time-code" />
+      <h3 id="passcodeTitle"></h3>
+      <input type="password" id="passcodeInput" inputmode="numeric" autocomplete="one-time-code" />
       <div class="modal-buttons">
-        <button class="yes" id="passcodeSubmit">Submit</button>
-        <button class="no" id="passcodeCancel">Cancel</button>
+        <button class="yes" id="passcodeSubmit"></button>
+        <button class="no" id="passcodeCancel"></button>
       </div>
     </div>
   </div>
@@ -357,10 +372,10 @@
   <div id="exportConfirmModal" hidden aria-modal="true" role="dialog" aria-labelledby="exportTitle">
     <div class="modal-backdrop" data-close="export"></div>
     <div class="modal">
-      <h3 id="exportTitle">CSV Export</h3>
-      <p>Your CSV has been downloaded.</p>
+      <h3 id="exportTitle"></h3>
+      <p id="exportMsg"></p>
       <div class="modal-buttons one">
-        <button class="yes" id="exportOk">OK</button>
+        <button class="yes" id="exportOk"></button>
       </div>
     </div>
   </div>
@@ -368,11 +383,11 @@
   <div id="deleteConfirmModal" hidden aria-modal="true" role="dialog" aria-labelledby="deleteTitle">
     <div class="modal-backdrop" data-close="delete"></div>
     <div class="modal">
-      <h3 id="deleteTitle">Delete Name</h3>
-      <p id="deleteText">Are you sure?</p>
+      <h3 id="deleteTitle"></h3>
+      <p id="deleteText"></p>
       <div class="modal-buttons">
-        <button class="yes" id="deleteYes">Delete</button>
-        <button class="no" id="deleteNo">Cancel</button>
+        <button class="yes" id="deleteYes"></button>
+        <button class="no" id="deleteNo"></button>
       </div>
     </div>
   </div>
@@ -384,27 +399,31 @@
       </div>
 
       <div class="title-wrap">
-        <h1>Project Argo</h1>
-        <div class="subtitle">CDM Area – Visitor Sign In / Out</div>
+        <h1 id="hdrTitle"></h1>
+        <div class="subtitle" id="hdrSub"></div>
       </div>
 
-      <div class="header-spacer"></div>
+      <div class="lang-wrap">
+        <button class="lang-flag" id="langBtn" type="button" aria-label="Switch language"></button>
+      </div>
     </header>
 
+    <!-- Name fields row, company field below -->
     <section class="form" aria-label="Sign in form">
-      <input id="nameInput" placeholder="Enter your name" autocomplete="name" />
-      <input id="companyInput" placeholder="Enter your company" autocomplete="organization" />
+      <input id="firstNameInput" autocomplete="given-name" />
+      <input id="lastNameInput" autocomplete="family-name" />
+      <input id="companyInput" class="fullrow" autocomplete="organization" />
     </section>
 
     <section class="buttons">
-      <button class="sign-in" id="signInBtn">Sign In</button>
-      <button class="sign-out" id="signOutBtn">Sign Out</button>
+      <button class="sign-in" id="signInBtn"></button>
+      <button class="sign-out" id="signOutBtn"></button>
     </section>
 
     <section class="panes">
       <div class="pane">
         <h2>
-          <span>Currently Signed In</span>
+          <span id="activeHeader"></span>
           <span class="count" id="activeCount">0</span>
         </h2>
         <ul id="activeList"></ul>
@@ -412,7 +431,7 @@
 
       <div class="pane">
         <h2>
-          <span>Previously Signed In</span>
+          <span id="historyHeader"></span>
           <span class="count" id="historyCount">0</span>
         </h2>
         <ul id="historyList"></ul>
@@ -420,7 +439,7 @@
     </section>
 
     <footer>
-      <button class="export" id="exportBtn">Generate Report</button>
+      <button class="export" id="exportBtn"></button>
     </footer>
   </main>
 
@@ -432,13 +451,103 @@
       });
     }
 
+    // ---- i18n strings ----
+    const I18N = {
+      en: {
+        hdrTitle: "Project Argo",
+        hdrSub: "CDM Area – Visitor Sign In / Out",
+
+        firstPh: "First name",
+        lastPh: "Last name",
+        companyPh: "Company",
+
+        signIn: "Sign In",
+        signOut: "Sign Out",
+        activeHeader: "Currently Signed In",
+        historyHeader: "Previously Signed In",
+        exportBtn: "Generate Report",
+
+        confirmTitle: "Induction Confirmation",
+        confirmQuestion: "Have you been inducted?",
+        yes: "Yes",
+        no: "No",
+
+        passcodeTitle: "Enter Passcode",
+        passcodePh: "Enter passcode",
+        submit: "Submit",
+        cancel: "Cancel",
+
+        exportTitle: "CSV Export",
+        exportMsg: "Your CSV has been downloaded.",
+        ok: "OK",
+
+        deleteTitle: "Delete Name",
+        deletePrompt: (name, company) => `Delete "${name}" (${company}) from the previous list?`,
+        delete: "Delete",
+
+        alertMissing: "Please enter first name, last name, and company",
+        alertAlreadyIn: "You are already signed in",
+        alertNotIn: "You are not currently signed in",
+        alertBadCode: "Incorrect passcode",
+
+        flag: "🇬🇧",
+        flagTitle: "Switch to Chinese"
+      },
+      zh: {
+        hdrTitle: "阿尔戈项目",
+        hdrSub: "CDM 区域 – 访客登记（签到 / 签退）",
+
+        firstPh: "名字",
+        lastPh: "姓氏",
+        companyPh: "公司",
+
+        signIn: "签到",
+        signOut: "签退",
+        activeHeader: "当前已签到",
+        historyHeader: "曾经签到",
+        exportBtn: "生成报告",
+
+        confirmTitle: "入场确认",
+        confirmQuestion: "您已完成入场培训/宣导吗？",
+        yes: "是",
+        no: "否",
+
+        passcodeTitle: "输入密码",
+        passcodePh: "请输入密码",
+        submit: "提交",
+        cancel: "取消",
+
+        exportTitle: "导出 CSV",
+        exportMsg: "CSV 已下载。",
+        ok: "确定",
+
+        deleteTitle: "删除姓名",
+        deletePrompt: (name, company) => `确定从历史列表删除“${name}”（${company}）吗？`,
+        delete: "删除",
+
+        alertMissing: "请输入名字、姓氏和公司",
+        alertAlreadyIn: "您已经签到",
+        alertNotIn: "您当前未签到",
+        alertBadCode: "密码错误",
+
+        flag: "🇨🇳",
+        flagTitle: "切换到英文"
+      }
+    };
+
+    // ---- Language state ----
+    const langBtn = document.getElementById("langBtn");
+    let lang = localStorage.getItem("lang") || "en";
+
     // ---- Data ----
     let visits = JSON.parse(localStorage.getItem("visits")) || [];
     let previousNames = JSON.parse(localStorage.getItem("previousNames")) || {};
 
     // ---- Elements ----
-    const nameInput = document.getElementById("nameInput");
+    const firstNameInput = document.getElementById("firstNameInput");
+    const lastNameInput = document.getElementById("lastNameInput");
     const companyInput = document.getElementById("companyInput");
+
     const activeList = document.getElementById("activeList");
     const historyList = document.getElementById("historyList");
     const activeCount = document.getElementById("activeCount");
@@ -453,27 +562,88 @@
     const signOutBtn = document.getElementById("signOutBtn");
     const exportBtn = document.getElementById("exportBtn");
 
+    const confirmTitleEl = document.getElementById("confirmTitle");
+    const confirmQuestionEl = document.getElementById("confirmQuestion");
     const confirmYes = document.getElementById("confirmYes");
     const confirmNo = document.getElementById("confirmNo");
 
+    const passcodeTitleEl = document.getElementById("passcodeTitle");
     const passcodeInput = document.getElementById("passcodeInput");
     const passcodeSubmit = document.getElementById("passcodeSubmit");
     const passcodeCancel = document.getElementById("passcodeCancel");
 
+    const exportTitleEl = document.getElementById("exportTitle");
+    const exportMsgEl = document.getElementById("exportMsg");
     const exportOk = document.getElementById("exportOk");
 
+    const deleteTitleEl = document.getElementById("deleteTitle");
     const deleteText = document.getElementById("deleteText");
     const deleteYes = document.getElementById("deleteYes");
     const deleteNo = document.getElementById("deleteNo");
+
+    const hdrTitleEl = document.getElementById("hdrTitle");
+    const hdrSubEl = document.getElementById("hdrSub");
+    const activeHeaderEl = document.getElementById("activeHeader");
+    const historyHeaderEl = document.getElementById("historyHeader");
 
     // ---- State ----
     let pendingSignIn = null;
     let pendingAction = null;
     let pendingDeleteName = null;
 
-    // ---- Modal helpers ----
+    // ============================================================
+    //  AUTO-CLEAR ALL FIELDS AFTER 10 SECONDS OF INACTIVITY
+    // ============================================================
+    let idleTimer = null;
+
+    function clearFormFields() {
+      firstNameInput.value = "";
+      lastNameInput.value = "";
+      companyInput.value = "";
+    }
+
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        // Only clear if something is currently entered
+        if (
+          firstNameInput.value.trim() ||
+          lastNameInput.value.trim() ||
+          companyInput.value.trim()
+        ) {
+          clearFormFields();
+        }
+      }, 10000);
+    }
+
+    function stopIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+
+    // Reset timer when user types or focuses in any input
+    [firstNameInput, lastNameInput, companyInput].forEach((inp) => {
+      inp.addEventListener("input", resetIdleTimer);
+      inp.addEventListener("focus", resetIdleTimer);
+    });
+
+    // Also reset timer on general interaction (good for iPad kiosk use)
+    ["pointerdown", "touchstart", "keydown"].forEach((evt) => {
+      document.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+
+    // Arm it immediately
+    resetIdleTimer();
+    // ============================================================
+
+    // ---- Helpers ----
     function openModal(el) { el.hidden = false; }
     function closeModal(el) { el.hidden = true; }
+    function t() { return I18N[lang] || I18N.en; }
+
+    function getFullName(first, last) {
+      return `${first} ${last}`.trim().replace(/\s+/g, " ");
+    }
 
     // Backdrop close
     document.addEventListener("click", (e) => {
@@ -529,22 +699,78 @@
     });
 
     // iOS keyboard friendliness
-    [nameInput, companyInput, passcodeInput].forEach((inp) => {
+    [firstNameInput, lastNameInput, companyInput, passcodeInput].forEach((inp) => {
       inp.addEventListener("focus", () => {
         setTimeout(() => inp.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
       });
     });
 
+    // Tap flag to toggle language
+    langBtn.addEventListener("click", () => {
+      lang = (lang === "en") ? "zh" : "en";
+      localStorage.setItem("lang", lang);
+      applyLanguage();
+      render();
+    });
+
+    applyLanguage();
     render();
 
+    function applyLanguage() {
+      document.documentElement.lang = (lang === "zh") ? "zh-Hans" : "en";
+      const s = t();
+
+      hdrTitleEl.textContent = s.hdrTitle;
+      hdrSubEl.textContent = s.hdrSub;
+
+      firstNameInput.placeholder = s.firstPh;
+      lastNameInput.placeholder = s.lastPh;
+      companyInput.placeholder = s.companyPh;
+
+      signInBtn.textContent = s.signIn;
+      signOutBtn.textContent = s.signOut;
+      exportBtn.textContent = s.exportBtn;
+
+      activeHeaderEl.textContent = s.activeHeader;
+      historyHeaderEl.textContent = s.historyHeader;
+
+      confirmTitleEl.textContent = s.confirmTitle;
+      confirmQuestionEl.textContent = s.confirmQuestion;
+      confirmYes.textContent = s.yes;
+      confirmNo.textContent = s.no;
+
+      passcodeTitleEl.textContent = s.passcodeTitle;
+      passcodeInput.placeholder = s.passcodePh;
+      passcodeSubmit.textContent = s.submit;
+      passcodeCancel.textContent = s.cancel;
+
+      exportTitleEl.textContent = s.exportTitle;
+      exportMsgEl.textContent = s.exportMsg;
+      exportOk.textContent = s.ok;
+
+      deleteTitleEl.textContent = s.deleteTitle;
+      deleteYes.textContent = s.delete;
+      deleteNo.textContent = s.cancel;
+
+      langBtn.textContent = s.flag;
+      langBtn.title = s.flagTitle;
+      langBtn.setAttribute("aria-label", s.flagTitle);
+    }
+
     function signIn() {
-      const name = nameInput.value.trim();
+      const first = firstNameInput.value.trim();
+      const last = lastNameInput.value.trim();
       const company = companyInput.value.trim();
+      const s = t();
 
-      if (!name || !company) return alert("Please enter your name and company");
-      if (visits.find(v => v.name === name && !v.signOut)) return alert("You are already signed in");
+      if (!first || !last || !company) return alert(s.alertMissing);
 
-      pendingSignIn = { name, company };
+      const fullName = getFullName(first, last);
+
+      if (visits.find(v => v.name === fullName && !v.signOut))
+        return alert(s.alertAlreadyIn);
+
+      pendingSignIn = { name: fullName, company };
       openModal(confirmModal);
     }
 
@@ -567,19 +793,26 @@
     }
 
     function signOut() {
-      const name = nameInput.value.trim();
-      const visit = visits.find(v => v.name === name && !v.signOut);
-      if (!visit) return alert("You are not currently signed in");
+      const first = firstNameInput.value.trim();
+      const last = lastNameInput.value.trim();
+      const s = t();
+
+      const fullName = getFullName(first, last);
+      const visit = visits.find(v => v.name === fullName && !v.signOut);
+      if (!visit) return alert(s.alertNotIn);
+
       visit.signOut = new Date().toISOString();
       save();
     }
 
     function save() {
       localStorage.setItem("visits", JSON.stringify(visits));
-      nameInput.value = "";
+      firstNameInput.value = "";
+      lastNameInput.value = "";
       companyInput.value = "";
+      stopIdleTimer();     // <- updated
+      resetIdleTimer();    // <- optional: start timer again immediately
       render();
-      // removed auto-focus
     }
 
     function render() {
@@ -589,7 +822,6 @@
       const signedInNames = new Set();
       const active = visits.filter(v => !v.signOut);
 
-      // Currently signed in (same format as history)
       active.forEach(v => {
         const li = document.createElement("li");
 
@@ -601,8 +833,11 @@
         `;
 
         text.addEventListener("click", () => {
-          nameInput.value = v.name;
+          const parts = String(v.name).split(" ");
+          firstNameInput.value = parts.slice(0, -1).join(" ") || "";
+          lastNameInput.value = parts.slice(-1).join(" ") || "";
           companyInput.value = v.company;
+          resetIdleTimer();
         });
 
         li.appendChild(text);
@@ -627,8 +862,11 @@
         `;
 
         text.addEventListener("click", () => {
-          nameInput.value = name;
+          const parts = String(name).split(" ");
+          firstNameInput.value = parts.slice(0, -1).join(" ") || "";
+          lastNameInput.value = parts.slice(-1).join(" ") || "";
           companyInput.value = company;
+          resetIdleTimer();
         });
 
         const del = document.createElement("button");
@@ -640,8 +878,9 @@
         del.addEventListener("click", (e) => {
           e.stopPropagation();
           pendingDeleteName = name;
-          deleteText.textContent = `Delete "${name}" (${company}) from the previous list?`;
+          deleteText.textContent = t().deletePrompt(name, company);
           openModal(deleteConfirmModal);
+          resetIdleTimer();
         });
 
         li.appendChild(text);
@@ -654,15 +893,7 @@
       historyCount.textContent = String(historyNames.length);
     }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
+    // --- Export ---
     function csvEscape(value) {
       const s = String(value ?? "");
       if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
@@ -704,19 +935,31 @@
       passcodeInput.value = "";
       openModal(passcodeModal);
       setTimeout(() => passcodeInput.focus(), 50);
+      resetIdleTimer();
     }
 
     function closePasscodeModal() {
       passcodeInput.value = "";
       closeModal(passcodeModal);
       pendingAction = null;
+      resetIdleTimer();
     }
 
     function checkPasscode() {
-      if (passcodeInput.value !== "8877") return alert("Incorrect passcode");
+      if (passcodeInput.value !== "8877") return alert(t().alertBadCode);
       closeModal(passcodeModal);
       if (pendingAction === "export") exportCSV();
       pendingAction = null;
+      resetIdleTimer();
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     // Prevent pull-to-refresh / page scroll, allow only UL scrolling
