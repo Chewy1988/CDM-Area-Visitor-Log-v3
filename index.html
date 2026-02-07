@@ -84,6 +84,16 @@
       height: auto;
     }
 
+    /* Make logo tappable */
+    .logo-wrap img[role="button"]{
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .logo-wrap img[role="button"]:active{
+      transform: scale(0.99);
+    }
+
     .title-wrap {
       text-align: center;
       justify-self: center;
@@ -176,7 +186,6 @@
 
     .sign-in { background: #34c759; color: #fff; }
     .sign-out { background: #ff3b30; color: #fff; }
-    .export { background: #6b7280; color: #fff; }
 
     /* ===== Lists ===== */
     .panes {
@@ -280,12 +289,6 @@
     .delete-btn:active {
       background: #fee2e2;
       border-color: #fecaca;
-    }
-
-    footer {
-      display: flex;
-      justify-content: center;
-      padding-top: 2px;
     }
 
     /* ===== Modals ===== */
@@ -395,7 +398,8 @@
   <main class="container">
     <header class="app-header">
       <div class="logo-wrap">
-        <img src="logo.png" alt="Company Logo" />
+        <!-- Logo now triggers Generate Report flow -->
+        <img id="logoBtn" src="logo.png" alt="Company Logo" role="button" tabindex="0" />
       </div>
 
       <div class="title-wrap">
@@ -438,9 +442,7 @@
       </div>
     </section>
 
-    <footer>
-      <button class="export" id="exportBtn"></button>
-    </footer>
+    <!-- Export button removed -->
   </main>
 
   <script>
@@ -560,7 +562,9 @@
 
     const signInBtn = document.getElementById("signInBtn");
     const signOutBtn = document.getElementById("signOutBtn");
-    const exportBtn = document.getElementById("exportBtn");
+
+    // Logo acts as export trigger
+    const logoBtn = document.getElementById("logoBtn");
 
     const confirmTitleEl = document.getElementById("confirmTitle");
     const confirmQuestionEl = document.getElementById("confirmQuestion");
@@ -605,7 +609,6 @@
     function resetIdleTimer() {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        // Only clear if something is currently entered
         if (
           firstNameInput.value.trim() ||
           lastNameInput.value.trim() ||
@@ -621,18 +624,15 @@
       idleTimer = null;
     }
 
-    // Reset timer when user types or focuses in any input
     [firstNameInput, lastNameInput, companyInput].forEach((inp) => {
       inp.addEventListener("input", resetIdleTimer);
       inp.addEventListener("focus", resetIdleTimer);
     });
 
-    // Also reset timer on general interaction (good for iPad kiosk use)
     ["pointerdown", "touchstart", "keydown"].forEach((evt) => {
       document.addEventListener(evt, resetIdleTimer, { passive: true });
     });
 
-    // Arm it immediately
     resetIdleTimer();
     // ============================================================
 
@@ -674,7 +674,15 @@
     // Buttons
     signInBtn.addEventListener("click", signIn);
     signOutBtn.addEventListener("click", signOut);
-    exportBtn.addEventListener("click", requestExport);
+
+    // Logo triggers export request (passcode modal)
+    logoBtn.addEventListener("click", requestExport);
+    logoBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        requestExport();
+      }
+    });
 
     confirmYes.addEventListener("click", () => confirmInduction(true));
     confirmNo.addEventListener("click", () => confirmInduction(false));
@@ -729,7 +737,6 @@
 
       signInBtn.textContent = s.signIn;
       signOutBtn.textContent = s.signOut;
-      exportBtn.textContent = s.exportBtn;
 
       activeHeaderEl.textContent = s.activeHeader;
       historyHeaderEl.textContent = s.historyHeader;
@@ -810,8 +817,8 @@
       firstNameInput.value = "";
       lastNameInput.value = "";
       companyInput.value = "";
-      stopIdleTimer();     // <- updated
-      resetIdleTimer();    // <- optional: start timer again immediately
+      stopIdleTimer();
+      resetIdleTimer();
       render();
     }
 
@@ -851,7 +858,6 @@
 
       historyNames.forEach(name => {
         const company = previousNames[name] || "";
-
         const li = document.createElement("li");
 
         const text = document.createElement("div");
@@ -885,7 +891,6 @@
 
         li.appendChild(text);
         li.appendChild(del);
-
         historyList.appendChild(li);
       });
 
