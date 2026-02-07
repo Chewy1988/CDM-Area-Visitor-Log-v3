@@ -364,7 +364,14 @@
     <div class="modal-backdrop" data-close="passcode"></div>
     <div class="modal">
       <h3 id="passcodeTitle"></h3>
-      <input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" />
+      <input
+        type="password"
+        id="passcodeInput"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        maxlength="4"
+        autocomplete="one-time-code"
+      />
       <div class="modal-buttons">
         <button class="yes" id="passcodeSubmit"></button>
         <button class="no" id="passcodeCancel"></button>
@@ -395,10 +402,25 @@
     </div>
   </div>
 
+  <!-- Admin Modal -->
+  <div id="adminModal" hidden aria-modal="true" role="dialog" aria-labelledby="adminTitle">
+    <div class="modal-backdrop" data-close="admin"></div>
+    <div class="modal">
+      <h3 id="adminTitle"></h3>
+      <p id="adminHint"></p>
+      <div class="modal-buttons one" style="gap:10px;">
+        <button class="yes" id="adminDlLast"></button>
+        <button class="yes" id="adminDlAll"></button>
+        <button class="no" id="adminClear"></button>
+        <button class="no" id="adminClose"></button>
+      </div>
+    </div>
+  </div>
+
   <main class="container">
     <header class="app-header">
       <div class="logo-wrap">
-        <!-- Logo now triggers Generate Report flow -->
+        <!-- Logo triggers Export (Generate Report) -->
         <img id="logoBtn" src="logo.png" alt="Company Logo" role="button" tabindex="0" />
       </div>
 
@@ -492,6 +514,16 @@
         alertNotIn: "You are not currently signed in",
         alertBadCode: "Incorrect passcode",
 
+        // Admin
+        adminTitle: "Admin",
+        adminHint: "Archive tools",
+        adminDlLast: "Download last archived export",
+        adminDlAll: "Download full archive",
+        adminClear: "Clear archive",
+        adminClose: "Close",
+        adminNoArchive: "No archive available.",
+        adminCleared: "Archive cleared.",
+
         flag: "🇬🇧",
         flagTitle: "Switch to Chinese"
       },
@@ -532,6 +564,16 @@
         alertNotIn: "您当前未签到",
         alertBadCode: "密码错误",
 
+        // Admin
+        adminTitle: "管理员",
+        adminHint: "归档工具",
+        adminDlLast: "下载最近一次归档导出",
+        adminDlAll: "下载全部归档",
+        adminClear: "清空归档",
+        adminClose: "关闭",
+        adminNoArchive: "没有可用的归档。",
+        adminCleared: "归档已清空。",
+
         flag: "🇨🇳",
         flagTitle: "切换到英文"
       }
@@ -544,6 +586,7 @@
     // ---- Data ----
     let visits = JSON.parse(localStorage.getItem("visits")) || [];
     let previousNames = JSON.parse(localStorage.getItem("previousNames")) || {};
+    let archive = JSON.parse(localStorage.getItem("archive")) || [];
 
     // ---- Elements ----
     const firstNameInput = document.getElementById("firstNameInput");
@@ -589,6 +632,15 @@
     const hdrSubEl = document.getElementById("hdrSub");
     const activeHeaderEl = document.getElementById("activeHeader");
     const historyHeaderEl = document.getElementById("historyHeader");
+
+    // Admin elements
+    const adminModal = document.getElementById("adminModal");
+    const adminTitleEl = document.getElementById("adminTitle");
+    const adminHintEl = document.getElementById("adminHint");
+    const adminDlLast = document.getElementById("adminDlLast");
+    const adminDlAll = document.getElementById("adminDlAll");
+    const adminClear = document.getElementById("adminClear");
+    const adminClose = document.getElementById("adminClose");
 
     // ---- State ----
     let pendingSignIn = null;
@@ -654,6 +706,7 @@
         if (which === "passcode") closeModal(passcodeModal);
         if (which === "export") closeModal(exportConfirmModal);
         if (which === "delete") closeModal(deleteConfirmModal);
+        if (which === "admin") closeModal(adminModal);
       }
     });
 
@@ -664,6 +717,7 @@
       if (!passcodeModal.hidden) closeModal(passcodeModal);
       if (!exportConfirmModal.hidden) closeModal(exportConfirmModal);
       if (!deleteConfirmModal.hidden) closeModal(deleteConfirmModal);
+      if (!adminModal.hidden) closeModal(adminModal);
     });
 
     // Enter submits passcode
@@ -681,6 +735,25 @@
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         requestExport();
+      }
+    });
+
+    // Hidden admin shortcut: triple-tap title within ~1 second
+    let titleTapCount = 0;
+    let titleTapTimer = null;
+
+    hdrTitleEl.addEventListener("click", () => {
+      titleTapCount++;
+      clearTimeout(titleTapTimer);
+      titleTapTimer = setTimeout(() => { titleTapCount = 0; }, 900);
+
+      if (titleTapCount >= 3) {
+        titleTapCount = 0;
+        pendingAction = "admin";
+        passcodeInput.value = "";
+        openModal(passcodeModal);
+        setTimeout(() => passcodeInput.focus(), 50);
+        resetIdleTimer();
       }
     });
 
@@ -705,6 +778,12 @@
       closeModal(deleteConfirmModal);
       render();
     });
+
+    // Admin buttons
+    adminDlLast.addEventListener("click", () => { downloadLastArchived(); resetIdleTimer(); });
+    adminDlAll.addEventListener("click", () => { downloadFullArchive(); resetIdleTimer(); });
+    adminClear.addEventListener("click", () => { clearArchive(); resetIdleTimer(); });
+    adminClose.addEventListener("click", () => closeModal(adminModal));
 
     // iOS keyboard friendliness
     [firstNameInput, lastNameInput, companyInput, passcodeInput].forEach((inp) => {
@@ -758,6 +837,14 @@
       deleteTitleEl.textContent = s.deleteTitle;
       deleteYes.textContent = s.delete;
       deleteNo.textContent = s.cancel;
+
+      // Admin labels
+      adminTitleEl.textContent = s.adminTitle;
+      adminHintEl.textContent = s.adminHint;
+      adminDlLast.textContent = s.adminDlLast;
+      adminDlAll.textContent = s.adminDlAll;
+      adminClear.textContent = s.adminClear;
+      adminClose.textContent = s.adminClose;
 
       langBtn.textContent = s.flag;
       langBtn.title = s.flagTitle;
@@ -891,6 +978,7 @@
 
         li.appendChild(text);
         li.appendChild(del);
+
         historyList.appendChild(li);
       });
 
@@ -898,13 +986,36 @@
       historyCount.textContent = String(historyNames.length);
     }
 
-    // --- Export ---
+    // --- Export helpers ---
     function csvEscape(value) {
       const s = String(value ?? "");
       if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
       return s;
     }
 
+    function downloadCSVFromVisits(visitsArr, filenamePrefix) {
+      const header = ["Name", "Company", "Sign In", "Sign Out"];
+      const rows = [header];
+
+      visitsArr.forEach(v => rows.push([v.name, v.company, v.signIn, v.signOut || ""]));
+
+      const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n") + "\n";
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+      link.download = `${filenamePrefix}_${stamp}.csv`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Export ---
     function exportCSV() {
       const header = ["Name", "Company", "Sign In", "Sign Out"];
       const rows = [header];
@@ -915,7 +1026,8 @@
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
 
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
 
       const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
       link.download = `CDM_Visitor_Log_${stamp}.csv`;
@@ -923,7 +1035,18 @@
       document.body.appendChild(link);
       link.click();
       link.remove();
+      URL.revokeObjectURL(url);
 
+      // ===== ARCHIVE exported visits =====
+      archive = JSON.parse(localStorage.getItem("archive")) || [];
+      archive.push({
+        exportedAt: new Date().toISOString(),
+        count: visits.length,
+        visits: visits
+      });
+      localStorage.setItem("archive", JSON.stringify(archive));
+
+      // Clear current working log (but it's now archived)
       visits = [];
       localStorage.setItem("visits", JSON.stringify(visits));
 
@@ -936,6 +1059,12 @@
     }
 
     function requestExport() {
+      // Optional safety: don't export empty
+      if (!visits.length) {
+        alert(t().adminNoArchive.replace("archive", "visits"));
+        return;
+      }
+
       pendingAction = "export";
       passcodeInput.value = "";
       openModal(passcodeModal);
@@ -950,10 +1079,48 @@
       resetIdleTimer();
     }
 
+    function openAdmin() {
+      archive = JSON.parse(localStorage.getItem("archive")) || [];
+      openModal(adminModal);
+    }
+
+    function downloadLastArchived() {
+      archive = JSON.parse(localStorage.getItem("archive")) || [];
+      if (!archive.length) return alert(t().adminNoArchive);
+      const last = archive[archive.length - 1];
+      const visitsArr = Array.isArray(last?.visits) ? last.visits : [];
+      if (!visitsArr.length) return alert(t().adminNoArchive);
+      downloadCSVFromVisits(visitsArr, "CDM_Visitor_Archive_Last");
+    }
+
+    function downloadFullArchive() {
+      archive = JSON.parse(localStorage.getItem("archive")) || [];
+      if (!archive.length) return alert(t().adminNoArchive);
+      const all = archive.flatMap(b => Array.isArray(b?.visits) ? b.visits : []);
+      if (!all.length) return alert(t().adminNoArchive);
+      downloadCSVFromVisits(all, "CDM_Visitor_Archive_All");
+    }
+
+    function clearArchive() {
+      if (!confirm("Clear archive?")) return;
+      archive = [];
+      localStorage.setItem("archive", JSON.stringify(archive));
+      alert(t().adminCleared);
+    }
+
     function checkPasscode() {
-      if (passcodeInput.value !== "8877") return alert(t().alertBadCode);
+      if (passcodeInput.value !== "8877") {
+        alert(t().alertBadCode);
+        passcodeInput.value = "";
+        setTimeout(() => passcodeInput.focus(), 50);
+        return;
+      }
+
       closeModal(passcodeModal);
+
       if (pendingAction === "export") exportCSV();
+      if (pendingAction === "admin") openAdmin();
+
       pendingAction = null;
       resetIdleTimer();
     }
