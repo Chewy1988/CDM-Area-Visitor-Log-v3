@@ -141,17 +141,14 @@
     .lang-flag:active{ background: #f3f4f6; }
 
     /* ===== Form ===== */
-.form {
+    .form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.25fr; /* company larger */
+      gap: 12px;
+    }
 
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.25fr; /* company larger */
-  gap: 12px;
-}
-
-
-/* keep the old class harmless if it still exists anywhere */
-.form .fullrow { grid-column: auto; }
-
+    /* keep the old class harmless if it still exists anywhere */
+    .form .fullrow { grid-column: auto; }
 
     .form .fullrow { grid-column: 1 / -1; }
 
@@ -253,6 +250,13 @@
       gap: 10px;
     }
 
+    /* ===== NEW: Highlight selected visitor ===== */
+    li.selected {
+      border-color: #34c759;
+      background: rgba(52,199,89,0.14);
+      box-shadow: 0 0 0 3px rgba(52,199,89,0.18);
+    }
+
     .li-text {
       flex: 1;
       min-width: 0;
@@ -344,10 +348,8 @@
       .app-header { grid-template-columns: 1fr; text-align: center; gap: 12px; }
       .logo-wrap { justify-content: center; }
       .lang-wrap { justify-content: center; }
-      @media (max-width: 900px) {
-  /* ...your existing rules... */
-  .form { grid-template-columns: 1fr; }
-}
+
+      .form { grid-template-columns: 1fr; }
 
       .form .fullrow { grid-column: auto; }
       .buttons { grid-template-columns: 1fr; }
@@ -658,6 +660,27 @@
     let pendingDeleteName = null;
 
     // ============================================================
+    //  NEW: Selected list item highlight state
+    // ============================================================
+    let selectedName = null;
+
+    function setSelected(name, listId) {
+      selectedName = name;
+
+      // remove highlight from all list items
+      document.querySelectorAll("#activeList li, #historyList li").forEach(li => {
+        li.classList.remove("selected");
+      });
+
+      // add highlight to the clicked one (if found)
+      if (listId) {
+        const el = document.querySelector(`#${listId} li[data-name="${CSS.escape(name)}"]`);
+        if (el) el.classList.add("selected");
+      }
+    }
+    // ============================================================
+
+    // ============================================================
     //  AUTO-CLEAR ALL FIELDS AFTER 10 SECONDS OF INACTIVITY
     // ============================================================
     let idleTimer = null;
@@ -666,6 +689,12 @@
       firstNameInput.value = "";
       lastNameInput.value = "";
       companyInput.value = "";
+
+      // NEW: also clear selection highlight
+      selectedName = null;
+      document.querySelectorAll("#activeList li, #historyList li").forEach(li => {
+        li.classList.remove("selected");
+      });
     }
 
     function resetIdleTimer() {
@@ -914,6 +943,13 @@
       firstNameInput.value = "";
       lastNameInput.value = "";
       companyInput.value = "";
+
+      // NEW: clear highlight when saving (optional but sensible)
+      selectedName = null;
+      document.querySelectorAll("#activeList li, #historyList li").forEach(li => {
+        li.classList.remove("selected");
+      });
+
       stopIdleTimer();
       resetIdleTimer();
       render();
@@ -928,6 +964,7 @@
 
       active.forEach(v => {
         const li = document.createElement("li");
+        li.dataset.name = v.name; // NEW
 
         const text = document.createElement("div");
         text.className = "li-text";
@@ -937,6 +974,8 @@
         `;
 
         text.addEventListener("click", () => {
+          setSelected(v.name, "activeList"); // NEW
+
           const parts = String(v.name).split(" ");
           firstNameInput.value = parts.slice(0, -1).join(" ") || "";
           lastNameInput.value = parts.slice(-1).join(" ") || "";
@@ -956,6 +995,7 @@
       historyNames.forEach(name => {
         const company = previousNames[name] || "";
         const li = document.createElement("li");
+        li.dataset.name = name; // NEW
 
         const text = document.createElement("div");
         text.className = "li-text";
@@ -965,6 +1005,8 @@
         `;
 
         text.addEventListener("click", () => {
+          setSelected(name, "historyList"); // NEW
+
           const parts = String(name).split(" ");
           firstNameInput.value = parts.slice(0, -1).join(" ") || "";
           lastNameInput.value = parts.slice(-1).join(" ") || "";
@@ -994,6 +1036,13 @@
 
       activeCount.textContent = String(active.length);
       historyCount.textContent = String(historyNames.length);
+
+      // NEW: keep highlight after rerender
+      if (selectedName) {
+        const activeEl = document.querySelector(`#activeList li[data-name="${CSS.escape(selectedName)}"]`);
+        const historyEl = document.querySelector(`#historyList li[data-name="${CSS.escape(selectedName)}"]`);
+        (activeEl || historyEl)?.classList.add("selected");
+      }
     }
 
     // --- Export helpers ---
